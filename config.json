@@ -1,0 +1,23 @@
+{
+  "port": "",
+  "baud": 19200,
+  "cell_count": 6,
+  "cycle_s": 2.0,
+  "timeout_ms": 800,
+  "record_window_min": 30,
+  "output_dir": "记录",
+  "start_minimized": false,
+  "update": {
+    "manifest_url": "",
+    "timeout_s": 15
+  },
+  "alarms": {
+    "cell_max_v": 4.3,
+    "cell_min_v": 2.5,
+    "delta_mv": 200,
+    "temp_c": 75,
+    "temp_warn_c": 65,
+    "temp_delta_warn_c": 20,
+    "beep": true
+  }
+}

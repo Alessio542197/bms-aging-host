@@ -1,0 +1,6 @@
+{
+  "version": "2026.11.20.1",
+  "notes": "首次上传占位：发布新 EXE 时把 version 改大，并更新 exe_url、exe_sha256",
+  "exe_url": "https://github.com/YOUR_NAME/YOUR_REPO/releases/download/v2026.11.21.1/BmsAgingHost.exe",
+  "exe_sha256": ""
+}
