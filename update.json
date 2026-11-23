@@ -1,6 +1,6 @@
 {
   "version": "2026.11.23.2",
   "notes": "首次发布：均衡状态、窗口可缩放、记录升级且不丢失、新增循环次数和压差",
-  "exe_url": "https://github.com/YOUR_NAME/YOUR_REPO/releases/download/v2026.11.23.2/BmsAgingHost.exe",
+  "exe_url": "https://github.com/Alessio542197/bms-aging-host/releases/download/2026.11.23.2/BmsAgingHost.exe",
   "exe_sha256": "1f871d107435d76432b1ba6ecd11080b85f611fd6328c848b4c0137e201d57e2"
 }
