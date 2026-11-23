@@ -7,7 +7,7 @@
 > | 版本号 | 在哪里 | 作用 |
 > |---|---|---|
 > | `APP_VERSION` | `app.py` 顶部（编译进 exe） | 程序自报的版本 |
-> | Release 标签 | GitHub 发行版，如 `v2026.11.24.1` | 只用于生成下载地址 |
+> | Release 标签 | GitHub 发行版，如 `v2026.11.24.2` | 只用于生成下载地址 |
 > | `update.json` 的 `version` | 仓库根目录 | 客户端拿它和 `APP_VERSION` 比较 |
 >
 > 三者最好保持一致；`update.json` 的 `version` **必须大于**客户端里的 `APP_VERSION`。
@@ -36,7 +36,7 @@
 
 ### 第 1 步：准备新 EXE
 
-1. 把 `app.py` 顶部的 `APP_VERSION` 改大，例如 `2026.11.23.2` → `2026.11.24.1`；
+1. 把 `app.py` 顶部的 `APP_VERSION` 改大，例如 `2026.11.24.2` → `2026.11.24.2`；
 2. 重新编译出新的 `BmsAgingHost.exe`（没有编译环境就把源码发我，我帮你出 exe 和 SHA256）；
 3. 用 `生成SHA256.bat` 或命令算出**新 exe** 的 SHA256：
 
@@ -49,15 +49,15 @@
 ### 第 2 步：上传新 EXE 到 Release
 
 1. 仓库首页右侧 **Releases** → **Draft a new release**；
-2. **Choose a tag** 输入新标签，如 `v2026.11.24.1` → **Create new tag**；
-3. **Release title** 填 `v2026.11.24.1`；
+2. **Choose a tag** 输入新标签，如 `v2026.11.24.2` → **Create new tag**；
+3. **Release title** 填 `v2026.11.24.2`；
 4. **Describe this release** 写更新内容（会显示在客户端更新弹窗里）；
 5. 把新 `BmsAgingHost.exe` 拖到 **Attach binaries** 区域；
 6. 点 **Publish release**（**不要停在 Draft**，草稿的附件下载会 404）；
 7. 发布后右键附件 → **复制链接地址**，得到：
 
    ```
-   https://github.com/用户名/仓库名/releases/download/v2026.11.24.1/BmsAgingHost.exe
+   https://github.com/用户名/仓库名/releases/download/v2026.11.24.2/BmsAgingHost.exe
    ```
 
 ### 第 3 步：更新 `update.json`
@@ -66,9 +66,9 @@
 
 ```json
 {
-  "version": "2026.11.24.1",
+  "version": "2026.11.24.2",
   "notes": "1. 新增xxx\n2. 修复xxx",
-  "exe_url": "https://github.com/用户名/仓库名/releases/download/v2026.11.24.1/BmsAgingHost.exe",
+  "exe_url": "https://github.com/用户名/仓库名/releases/download/v2026.11.24.2/BmsAgingHost.exe",
   "exe_sha256": "第 1 步算出的新哈希"
 }
 ```

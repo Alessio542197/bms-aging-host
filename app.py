@@ -4,9 +4,10 @@
 只保留老化测试需要的：
     * 6 节电芯电压、最高/最低/压差
     * THM0=MOS 温度、THM1=插座温度、THM2=电芯温度
-    * 循环次数、MOS 状态
+    * 循环次数、均衡状态、SOC、MOS 状态
     * 串口选择、波特率选择、连接状态
-    * 每 20 分钟自动保存一行到 CSV（可后台运行）
+    * 每一帧写入 CSV，每 30 分钟一个文件
+    * 关闭窗口即退出程序（不后台驻留）
 
 协议与 BmsStudioV3Qt 3.8.13 Qt030 一致（0x7B/0x7D + CRC8）。
 """
@@ -31,10 +32,9 @@ from typing import Any, Dict, List, Optional
 
 import bms_protocol as proto
 from win_serial import SerialPort, list_ports
-import tray_icon
 import updater
 
-APP_VERSION = "2026.11.23.2"
+APP_VERSION = "2026.11.24.2"
 APP_DIR = Path(__file__).resolve().parent
 DATA_DIR = Path(os.environ.get("BMS_DATA_DIR") or APP_DIR)
 CONFIG_PATH = Path(os.environ.get("BMS_CONFIG_PATH") or (DATA_DIR / "config.json"))
@@ -48,7 +48,6 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "timeout_ms": 800,
     "record_window_min": 30,
     "output_dir": "记录",
-    "start_minimized": False,
     "update": {
         "manifest_url": "",
         "timeout_s": 15,
@@ -731,7 +730,7 @@ FONT_UI = "宋体"
 FONT_NUM = "宋体"
 
 
-def run_gui(cfg: Dict[str, Any], start_minimized: bool = False, demo: bool = False) -> int:
+def run_gui(cfg: Dict[str, Any], demo: bool = False) -> int:
     try:
         ctypes.windll.shcore.SetProcessDpiAwareness(1)
     except Exception:
@@ -811,15 +810,10 @@ def run_gui(cfg: Dict[str, Any], start_minimized: bool = False, demo: bool = Fal
 
         threading.Thread(target=_run, daemon=True).start()
 
-    tray_q: "queue.Queue[str]" = queue.Queue()
     upd_q: "queue.Queue[tuple]" = queue.Queue()
     update_state = {"busy": False}
-    tray: Optional[tray_icon.TrayIcon] = None
     reader: Optional[BaseReader] = None
     stop_flag = threading.Event()
-
-    def on_tray(cmd: str) -> None:
-        tray_q.put(cmd)
 
     def make_reader() -> BaseReader:
         if demo:
@@ -1324,8 +1318,6 @@ def run_gui(cfg: Dict[str, Any], start_minimized: bool = False, demo: bool = Fal
             reader.stop()
         detail_csv.close()
         alarm_csv.close()
-        if tray is not None:
-            tray.stop()
         try:
             root.destroy()
         except Exception:
@@ -1337,40 +1329,7 @@ def run_gui(cfg: Dict[str, Any], start_minimized: bool = False, demo: bool = Fal
     hint.pack(side="left")
 
     # ---- 定时刷新 -------------------------------------------------------- #
-    def show_window() -> None:
-        root.deiconify()
-        root.state("normal")
-        root.lift()
-        try:
-            root.attributes("-topmost", True)
-            root.after(400, lambda: root.attributes("-topmost", False))
-        except Exception:
-            pass
-        root.focus_force()
-
-    def on_close() -> None:
-        if tray is not None and tray.ok:
-            root.withdraw()
-            tray.notify("电池老化上位机", "已最小化到托盘，双击图标可重新打开。")
-        else:
-            quit_app()
-
-    root.protocol("WM_DELETE_WINDOW", on_close)
-
-    def process_tray() -> None:
-        try:
-            while True:
-                cmd = tray_q.get_nowait()
-                if cmd == "show":
-                    show_window()
-                elif cmd == "open_dir":
-                    open_dir()
-                elif cmd == "exit":
-                    quit_app()
-                    return
-        except queue.Empty:
-            pass
-        root.after(150, process_tray)
+    root.protocol("WM_DELETE_WINDOW", quit_app)
 
     def refresh() -> None:
         nonlocal last_alarm_eval, record_count, last_record_updated
@@ -1496,37 +1455,6 @@ def run_gui(cfg: Dict[str, Any], start_minimized: bool = False, demo: bool = Fal
             save_lbl.config(text=f"记录目录 {out_dir}（等待第一帧数据）")
         root.after(200, refresh)
 
-    def check_signal() -> None:
-        sig = Path(tempfile.gettempdir()) / "bms_host_show.signal"
-        try:
-            if sig.exists() and sig.stat().st_mtime > start_ts:
-                sig.unlink()
-                show_window()
-        except Exception:
-            pass
-        root.after(1500, check_signal)
-
-    start_ts = time.time()
-    sig_file = Path(tempfile.gettempdir()) / "bms_host_show.signal"
-    try:
-        sig_file.unlink()
-    except Exception:
-        pass
-
-    try:
-        tray = tray_icon.TrayIcon("电池老化测试上位机", str(icon), on_tray)
-        tray.start()
-        tray.ready.wait(2.0)
-    except Exception:
-        tray = None
-
-    if start_minimized:
-        root.withdraw()
-        if tray is not None and tray.ok:
-            tray.notify("电池老化测试上位机", "已在后台运行，双击托盘图标打开界面。")
-    else:
-        root.after(50, lambda: None)
-
     # ---- 字体随窗口大小自适应 -------------------------------------------- #
     base_fonts: Dict[Any, tuple] = {}
     ui_state = {"scale": 1.0, "job": None}
@@ -1603,8 +1531,6 @@ def run_gui(cfg: Dict[str, Any], start_minimized: bool = False, demo: bool = Fal
 
     root.after(200, refresh)
     root.after(200, process_updates)
-    root.after(1500, check_signal)
-    root.after(150, process_tray)
     root.mainloop()
     return 0
 
@@ -1614,15 +1540,10 @@ def run_gui(cfg: Dict[str, Any], start_minimized: bool = False, demo: bool = Fal
 # --------------------------------------------------------------------------- #
 
 def single_instance() -> bool:
-    """同一时间只允许一个界面实例；第二个实例通知第一个显示窗口。"""
+    """同一时间只允许一个界面实例；第二个实例直接退出。"""
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     kernel32.CreateMutexW(None, False, "Local\\BmsAgingHostV1")
     if ctypes.get_last_error() == 183:  # ERROR_ALREADY_EXISTS
-        try:
-            sig = Path(tempfile.gettempdir()) / "bms_host_show.signal"
-            sig.write_text(str(time.time()))
-        except Exception:
-            pass
         return False
     return True
 
@@ -1636,7 +1557,6 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     parser = argparse.ArgumentParser(description="电池老化测试上位机")
     parser.add_argument("--demo", action="store_true", help="模拟数据")
-    parser.add_argument("--minimized", action="store_true", help="启动即最小化到托盘")
     parser.add_argument("--window-min", type=int, default=0, help="每段记录文件的分钟数，默认 30")
     parser.add_argument("--port", type=str, default="")
     parser.add_argument("--baud", type=int, default=0)
@@ -1674,8 +1594,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if not args.demo and not single_instance():
         return 0
 
-    return run_gui(cfg, start_minimized=args.minimized or bool(cfg.get("start_minimized")),
-                   demo=args.demo)
+    return run_gui(cfg, demo=args.demo)
 
 
 if __name__ == "__main__":

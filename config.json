@@ -6,7 +6,6 @@
   "timeout_ms": 800,
   "record_window_min": 30,
   "output_dir": "记录",
-  "start_minimized": false,
   "update": {
     "manifest_url": "",
     "timeout_s": 15,

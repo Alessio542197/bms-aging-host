@@ -6,7 +6,7 @@
 > 最简 5 步：
 > 1. 登录 gitee.com → 右上角 **+ → 新建仓库**；
 > 2. 仓库页 **上传文件**，把源码/文档拖上去（不要传 runtime、exe、记录）；
-> 3. **发行版 → 创建发行版**，标签 `v2026.11.23.2`，上传 `BmsAgingHost.exe`；
+> 3. **发行版 → 创建发行版**，标签 `v2026.11.24.2`，上传 `BmsAgingHost.exe`；
 > 4. 改 `update.json`：版本、`exe_url`、`exe_sha256`，提交；
 > 5. 把清单地址（`https://gitee.com/用户名/仓库名/raw/master/update.json`）
 >    填到程序 `config.json` 的 `update.manifest_url`，点“检查更新”。
@@ -37,10 +37,10 @@
 2. 把下面这些拖进上传区域：
 
    ```
-   app.py  bms_protocol.py  win_serial.py  tray_icon.py  updater.py
+   app.py  bms_protocol.py  win_serial.py  updater.py
    config.json  app.ico  update.json  update_manifest.example.json
    README.md  使用说明.md  GitHub发布说明书.md  界面截图.png
-   启动上位机.bat  后台运行.bat  模拟演示.bat  检查串口.bat
+   启动上位机.bat  模拟演示.bat  检查串口.bat
    生成SHA256.bat  tests\  build\
    ```
 
@@ -53,8 +53,8 @@
 ## 4. 创建发行版（放 EXE）
 
 1. 仓库页面顶部点 **发行版**（Releases）→ **创建发行版**；
-2. 版本号填 `v2026.11.23.2`（标签）；
-3. 发行版标题：`v2026.11.23.2`；
+2. 版本号填 `v2026.11.24.2`（标签）；
+3. 发行版标题：`v2026.11.24.2`；
 4. 描述填更新内容；
 5. 在附件区域上传 `BmsAgingHost.exe`（建议先把 exe 改名成英文）；
    也可以同时上传便携版 zip；
@@ -63,7 +63,7 @@
 发布后在发行版页面点附件即可下载，复制下载链接，形如：
 
 ```
-https://gitee.com/你的用户名/bms-aging-host/releases/download/v2026.11.23.2/BmsAgingHost.exe
+https://gitee.com/你的用户名/bms-aging-host/releases/download/v2026.11.24.2/BmsAgingHost.exe
 ```
 
 这个地址就是 `update.json` 里的 `exe_url`。
@@ -83,21 +83,21 @@ https://gitee.com/你的用户名/bms-aging-host/raw/master/update.json
 
 ```json
 {
-  "version": "2026.11.24.1",
+  "version": "2026.11.24.2",
   "notes": "更新说明",
-  "exe_url": "https://gitee.com/你的用户名/bms-aging-host/releases/download/v2026.11.24.1/BmsAgingHost.exe",
+  "exe_url": "https://gitee.com/你的用户名/bms-aging-host/releases/download/v2026.11.24.2/BmsAgingHost.exe",
   "exe_sha256": "新 EXE 的 SHA256"
 }
 ```
 
-- `version` 必须大于程序内置版本（当前 `2026.11.23.2`）；
+- `version` 必须大于程序内置版本（当前 `2026.11.24.2`）；
 - SHA256 用 `生成SHA256.bat` 双击生成，或：
 
   ```bat
   certutil -hashfile BmsAgingHost.exe SHA256
   ```
 
-- 第一次上传时如果还没有新 exe，`version` 先填当前版本 `2026.11.23.2`，避免旧版提示更新但链接 404。
+- 第一次上传时如果还没有新 exe，`version` 先填当前版本 `2026.11.24.2`，避免旧版提示更新但链接 404。
 
 提交 `update.json` 后，raw 地址内容会自动更新（可能有几分钟缓存）。
 
@@ -128,7 +128,7 @@ https://gitee.com/你的用户名/bms-aging-host/raw/master/update.json
 
 1. 改代码，重新编译 exe；
 2. 生成新 exe 的 SHA256；
-3. Gitee → 发行版 → 创建发行版（新标签，如 `v2026.11.24.1`），上传新 exe；
+3. Gitee → 发行版 → 创建发行版（新标签，如 `v2026.11.24.2`），上传新 exe；
 4. 修改 `update.json` 的 version / notes / exe_url / exe_sha256，提交；
 5. 打开旧版程序点“检查更新”验证。
 
@@ -157,7 +157,7 @@ https://gitee.com/你的用户名/bms-aging-host/raw/master/update.json
 仓库根目录只需要这些就能工作：
 
 ```
-app.py  bms_protocol.py  win_serial.py  tray_icon.py  updater.py
+app.py  bms_protocol.py  win_serial.py  updater.py
 config.json  app.ico  update.json
 README.md  使用说明.md
 ```

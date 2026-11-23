@@ -7,7 +7,7 @@ using System.Reflection;
 class Program
 {
     // 更新本版本号后，首次运行会重新解压
-    const string Version = "2026.11.23.2";
+    const string Version = "2026.11.24.1";
 
     static bool Writable(string dir)
     {

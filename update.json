@@ -1,8 +1,6 @@
 {
-  "version": "2026.11.24.1",
-  "notes": "2026.11.24.1 更新：\n1. 记录新增循环次数、压差，列顺序按现场要求调整\n2. 升级/更新程序时保留原有记录\n3. 均衡状态显示、窗口自由缩放\n4. 更新失败提示更明确，支持代理",
-  "exe_url": null,
-  "exe_url": null,
-  "exe_url": "https://github.com/Alessio542197/bms-aging-host/releases/download/V2026.11.24.1/BmsAgingHost.exe",
-  "exe_sha256": "908668f491a33caad90714d725384538f30d1fdb4567cfd56529f095a7806cd3"
+  "version": "2026.11.24.2",
+  "notes": "2026.11.24.2 更新：\n1. 去掉后台驻留/托盘，关闭窗口即退出\n2. 更新程序时保留原有记录\n3. 记录新增循环次数、压差，列顺序调整\n4. 均衡状态显示、窗口自由缩放",
+  "exe_url": "https://github.com/Alessio542197/bms-aging-host/releases/download/V2026.11.24.2/BmsAgingHost.exe",
+  "exe_sha256": "0dc8edcb56bf266046ab344da18d33b3431d80cdfd9d9d76c083e5a9d611ec41"
 }

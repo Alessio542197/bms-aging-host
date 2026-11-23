@@ -16,7 +16,7 @@
 - MOS 状态（充电 MOS / 放电 MOS）
 - 告警条：单体过压、欠压、压差过大、过温；可选提示音，累计告警条数
 - 逐帧记录：每一帧写一条 CSV，每 30 分钟自动分文件（UTF-8 BOM，Excel 可直接打开）
-- 最小化到系统托盘后台运行；单实例
+- 单实例运行；关闭窗口即退出（不后台驻留）
 - 窗口可自由缩放，字号随窗口自动调整，过小时出现滚动条
 - 内置在线更新：从清单地址检查新版本、下载、校验 SHA256 并自动替换重启
 
@@ -51,7 +51,6 @@ python app.py --port COM6 --baud 19200
 | `timeout_ms` | 800 | 单条应答超时 |
 | `record_window_min` | 30 | 记录文件分段分钟数 |
 | `output_dir` | 记录 | 记录目录（相对程序目录） |
-| `start_minimized` | false | 启动即最小化到托盘 |
 | `update.manifest_url` | "" | 在线更新清单地址 |
 | `alarms.cell_max_v` | 4.3 | 单体过压阈值（V） |
 | `alarms.cell_min_v` | 2.5 | 单体欠压阈值（V） |
@@ -95,7 +94,7 @@ python app.py --port COM6 --baud 19200
 
 > 如果 `raw.githubusercontent.com` 访问报 11004，改用 Release 附件/Gitee/公司服务器地址；有代理可在 `update.proxy` 填写。
 
-> 第一次上传仓库时，`update.json` 的 `version` 建议先填当前版本 `2026.11.23.2`，
+> 第一次上传仓库时，`update.json` 的 `version` 建议先填当前版本 `2026.11.24.2`，
 > 等真正发布新 EXE 后再改大；否则旧版会提示更新但下载链接是占位地址。
 
 命令行只检查不下载：
@@ -123,10 +122,9 @@ BmsAgingHost.exe --check-update https://raw.githubusercontent.com/USER/REPO/main
 ## 目录结构
 
 ```
-app.py                     主程序（界面、采集、告警、记录、托盘、更新入口）
+app.py                     主程序（界面、采集、告警、记录、更新入口）
 bms_protocol.py            协议帧、CRC8、各命令解码
 win_serial.py              Win32 串口（ctypes，无需 pyserial）
-tray_icon.py               托盘图标与菜单
 updater.py                 在线更新（清单、下载、SHA256、替换重启）
 config.json                配置
 app.ico                    图标

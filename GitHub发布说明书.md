@@ -6,7 +6,7 @@
 > **最简 5 步**
 > 1. 注册/登录 GitHub → New repository 建一个公开仓库；
 > 2. Add file → Upload files，把本文件夹里的源码/文档拖上去（**不要**拖 `runtime`、exe、记录）；
-> 3. Releases → Create a new release，打 tag `v2026.11.23.2`，把 EXE 作为附件上传；
+> 3. Releases → Create a new release，打 tag `v2026.11.24.2`，把 EXE 作为附件上传；
 > 4. 复制 EXE 下载链接，填进 `update.json`，提交；
 > 5. 把 `https://raw.githubusercontent.com/用户名/仓库名/main/update.json` 填到程序 `config.json` 的
 >    `update.manifest_url`，重启程序点“检查更新”。
@@ -31,7 +31,7 @@
 - 本文件夹 `电池老化上位机_GitHub发布`，里面已经准备好：
   - `README.md`：仓库首页介绍（含截图）
   - `.gitignore`：告诉 git 忽略 runtime、exe、记录、缓存
-  - 源码：`app.py`、`bms_protocol.py`、`win_serial.py`、`tray_icon.py`、`updater.py`
+  - 源码：`app.py`、`bms_protocol.py`、`win_serial.py`、`updater.py`
   - 文档：`使用说明.md`、本说明书、`界面截图.png`
   - 配置：`config.json`（模板）、`update.json`（更新清单模板）、`update_manifest.example.json`
   - 启动脚本：4 个 `.bat`
@@ -70,11 +70,11 @@
 2. 打开本文件夹，选中下面这些**文件和文件夹**，拖进网页的上传区域：
 
    ```
-   app.py  bms_protocol.py  win_serial.py  tray_icon.py  updater.py
+   app.py  bms_protocol.py  win_serial.py  updater.py
    config.json  app.ico  update.json  update_manifest.example.json
    README.md  使用说明.md  GitHub发布说明书.md  界面截图.png
    GitHub上传说明书.docx  GitHub上传说明书.pdf  生成SHA256.bat
-   启动上位机.bat  后台运行.bat  模拟演示.bat  检查串口.bat
+   启动上位机.bat  模拟演示.bat  检查串口.bat
    tests\        build\
    .gitignore
    ```
@@ -100,8 +100,8 @@
 Release 就是“版本发布页”，每个版本一个固定下载地址。
 
 1. 仓库首页右侧点 **Releases** → **Create a new release**；
-2. **Choose a tag** 输入 `v2026.11.23.2` → 点 **Create new tag**；
-3. **Release title** 填 `v2026.11.23.2`；
+2. **Choose a tag** 输入 `v2026.11.24.2` → 点 **Create new tag**；
+3. **Release title** 填 `v2026.11.24.2`；
 4. **Describe this release** 填更新内容（可以复制 `update.json` 里的 notes）；
 5. 把 `电池老化上位机.exe` 拖到 **Attach binaries by dropping them here** 区域；
    - 建议先把文件名改成英文 `BmsAgingHost.exe`，下载 URL 更干净；
@@ -110,7 +110,7 @@ Release 就是“版本发布页”，每个版本一个固定下载地址。
 7. 在发布页找到 `BmsAgingHost.exe`，右键 → **复制链接地址**，得到类似：
 
    ```
-   https://github.com/你的用户名/bms-aging-host/releases/download/v2026.11.23.2/BmsAgingHost.exe
+   https://github.com/你的用户名/bms-aging-host/releases/download/v2026.11.24.2/BmsAgingHost.exe
    ```
 
 这个链接就是 `update.json` 里的 `exe_url`。
@@ -132,7 +132,7 @@ Release 就是“版本发布页”，每个版本一个固定下载地址。
 }
 ```
 
-- `version` 必须**大于程序内置版本**（当前是 `2026.11.23.2`）才会提示更新；
+- `version` 必须**大于程序内置版本**（当前是 `2026.11.24.2`）才会提示更新；
 - `exe_url` 填第 4 步复制的链接；
 - SHA256 生成命令（在 exe 所在目录打开 cmd）：
 
@@ -143,7 +143,7 @@ Release 就是“版本发布页”，每个版本一个固定下载地址。
   把输出的十六进制串去掉空格填入即可。也可以直接双击 **`生成SHA256.bat`**，把 EXE 拖进窗口，哈希会自动复制到剪贴板。
 
 > **第一次上传的注意**：如果还没准备好新 EXE，先把 `update.json` 的 `version` 填成当前版本
-> `2026.11.23.2`（或干脆先不提交这个文件），否则旧版程序会提示“发现新版本”但链接是占位地址，
+> `2026.11.24.2`（或干脆先不提交这个文件），否则旧版程序会提示“发现新版本”但链接是占位地址，
 > 下载会 404。等真正发布新 EXE 时再把 version 改大。
 
 ### 5.2 提交 update.json
@@ -219,7 +219,7 @@ BmsAgingHost.exe --check-update https://raw.githubusercontent.com/你的用户�
 版本号规则：按数字段比较，任何一段变大即可，例如：
 
 ```
-2026.11.21.1  >  2026.11.23.2  >  2026.11.19.4
+2026.11.21.1  >  2026.11.24.2  >  2026.11.19.4
 ```
 
 ### 6.3 私有仓库怎么办
@@ -273,7 +273,6 @@ README.md                  仓库首页介绍
 app.py                     主程序
 bms_protocol.py            协议与解码
 win_serial.py              Win32 串口
-tray_icon.py               托盘
 updater.py                 在线更新
 config.json                配置模板
 app.ico                    图标
