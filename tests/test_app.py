@@ -123,13 +123,17 @@ def test_reader():
     row = A.detail_row(d, "单体过压")
     col = {name: i for i, name in enumerate(A.DETAIL_HEADER)}
     assert row[col["充放电状态"]] == "放电", row
-    assert row[col["警报状态"]] == "单体过压"
+    assert row[col["报警状态"]] == "报警"
+    assert row[col["报警类型"]] == "单体过压"
+    assert row[col["循环次数"]] == "321"
     assert row[col["温差(℃)"]] == "8.0"
     assert row[col["电芯1(V)"]] == "3.850"
     assert row[col["最高单体(V)"]] == "3.862"
     assert row[col["最低单体(V)"]] == "3.819"
+    assert row[col["压差(mV)"]] == "43"
     assert row[col["电流(A)"]] == "-11.8"
-    print("reader ok:", row[:10])
+    assert row[col["SOC(%)"]] == "55"
+    print("reader ok:", row[:6])
 
 
 def test_csv():
@@ -156,7 +160,34 @@ def test_csv():
     assert "时间" in text[0] and "充放电状态" in text[0]
     text2 = files[1].read_text(encoding="utf-8-sig").splitlines()
     assert len(text2) == 2 and "单体过压" in text2[1]
+    assert "循环次数" in text[0] and "压差(mV)" in text[0] and "报警类型" in text[0]
     print("csv ok:", [f.name for f in files])
+
+
+def test_header_migration():
+    import tempfile
+    from datetime import datetime
+    folder = Path(tempfile.mkdtemp(prefix="aging_hdr_"))
+    old = folder / "老化记录_20261123_1000.csv"
+    old.write_text("时间,警报状态,SOC(%)\n2026-11-23 10:01:00,正常,55\n",
+                   encoding="utf-8-sig")
+    cfg = A.load_config()
+    r = A.BmsReader("COM_TEST", 19200, cfg)
+    r.ser = FakeSerial()
+    for cmd in (0x20, 0x33, 0x30, 0x31, 0x32, 0x50):
+        r._query(cmd, timeout=0.5)
+    d = r.snapshot()["data"]
+    t = datetime.now().astimezone().replace(hour=10, minute=5, second=0, microsecond=0)
+    d.updated = t
+    w = A.WindowCsv(folder, 30)
+    w.write(t, A.detail_row(d, "正常"))
+    w.close()
+    names = sorted(p.name for p in folder.glob("*.csv"))
+    assert "老化记录_20261123_1000_旧格式1.csv" in names, names
+    new = folder / "老化记录_20261123_1000.csv"
+    lines = new.read_text(encoding="utf-8-sig").splitlines()
+    assert len(lines) == 2 and "报警类型" in lines[0], lines
+    print("header migration ok:", names)
 
 
 def test_alarm():
@@ -189,5 +220,6 @@ if __name__ == "__main__":
     test_protocol()
     test_reader()
     test_csv()
+    test_header_migration()
     test_alarm()
     print("ALL OK")

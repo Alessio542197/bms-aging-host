@@ -24,6 +24,7 @@
 
 1. 打开右侧 **Releases**，下载最新 `BmsAgingHost.exe`（单文件版）；
 2. 双击运行，首次会解压到 `%LOCALAPPDATA%\BmsAgingHost\app`；
+   记录和配置在 `%LOCALAPPDATA%\BmsAgingHost`（app 外面，升级时保留）；
 3. 选择串口和波特率（默认 19200），点“连接”。
 
 单文件版与文件夹版（`BmsAgingHost_portable.zip`，含 `runtime\`）功能相同。
@@ -62,14 +63,16 @@ python app.py --port COM6 --baud 19200
 
 ## 数据记录
 
-采集到的**每一帧**都会写入 CSV，按 30 分钟分段：
+采集到的**每一帧**都会写入 CSV，按 30 分钟分段；单文件版记录在
+`%LOCALAPPDATA%\BmsAgingHost\记录`（升级不覆盖），文件夹版在 `程序目录\记录`：
 
 ```
-记录\老化记录_YYYYMMDD_HHMM.csv
+老化记录_YYYYMMDD_HHMM.csv
 ```
 
-列为：时间、警报状态、SOC、三路温度、温差、电芯 1~6 电压、电流、最高/最低单体、充放电状态。
-告警另存 `告警记录_YYYYMMDD.csv`（触发/恢复两地平）。
+列顺序：时间、充放电状态、电流、SOC、循环次数、THM0、THM1、THM2、温差、
+电芯 1~6 电压、最高单体电压、最低单体电压、压差、报警状态、报警类型。
+告警另存 `告警记录_YYYYMMDD.csv`（触发/恢复两电平）。
 
 ## 在线更新
 
@@ -86,9 +89,13 @@ python app.py --port COM6 --baud 19200
 
 `version` 大于程序内置版本才会提示；下载后校验 SHA256，校验通过后退出并由后台脚本
 替换 EXE、重新启动。详细步骤见 [GitHub发布说明书.md](GitHub发布说明书.md)（同目录也有
-`GitHub上传说明书.docx` / `.pdf`）。
+`GitHub上传说明书.docx` / `.pdf`）；国内访问 GitHub 慢或 `raw.githubusercontent.com`
+打不开时，看 [Gitee上传说明书.md](Gitee上传说明书.md)（同样有 docx/pdf）。
+发新版本、让现场自动更新的步骤见 [GitHub更新操作指南.md](GitHub更新操作指南.md)。
 
-> 第一次上传仓库时，`update.json` 的 `version` 建议先填当前版本 `2026.11.20.1`，
+> 如果 `raw.githubusercontent.com` 访问报 11004，改用 Release 附件/Gitee/公司服务器地址；有代理可在 `update.proxy` 填写。
+
+> 第一次上传仓库时，`update.json` 的 `version` 建议先填当前版本 `2026.11.23.2`，
 > 等真正发布新 EXE 后再改大；否则旧版会提示更新但下载链接是占位地址。
 
 命令行只检查不下载：

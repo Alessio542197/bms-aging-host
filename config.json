@@ -9,7 +9,8 @@
   "start_minimized": false,
   "update": {
     "manifest_url": "",
-    "timeout_s": 15
+    "timeout_s": 15,
+    "proxy": ""
   },
   "alarms": {
     "cell_max_v": 4.3,

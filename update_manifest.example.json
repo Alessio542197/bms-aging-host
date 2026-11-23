@@ -1,5 +1,5 @@
 {
-  "version": "2026.11.21.1",
+  "version": "2026.11.24.1",
   "notes": "1. 修复 SOC 圆环\n2. 增加在线更新功能",
   "exe_url": "https://example.com/bms/电池老化上位机.exe",
   "exe_sha256": "把新 exe 的 SHA256 填在这里"

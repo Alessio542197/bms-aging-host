@@ -34,9 +34,11 @@ from win_serial import SerialPort, list_ports
 import tray_icon
 import updater
 
-APP_VERSION = "2026.11.20.1"
+APP_VERSION = "2026.11.23.2"
 APP_DIR = Path(__file__).resolve().parent
-CONFIG_PATH = APP_DIR / "config.json"
+DATA_DIR = Path(os.environ.get("BMS_DATA_DIR") or APP_DIR)
+CONFIG_PATH = Path(os.environ.get("BMS_CONFIG_PATH") or (DATA_DIR / "config.json"))
+DEFAULT_CONFIG_PATH = APP_DIR / "config.json"
 
 DEFAULT_CONFIG: Dict[str, Any] = {
     "port": "",
@@ -50,6 +52,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "update": {
         "manifest_url": "",
         "timeout_s": 15,
+        "proxy": "",
     },
     "alarms": {
         "cell_max_v": 4.3,
@@ -77,9 +80,10 @@ def deep_merge(base: Dict[str, Any], over: Dict[str, Any]) -> Dict[str, Any]:
 
 def load_config() -> Dict[str, Any]:
     cfg = dict(DEFAULT_CONFIG)
-    if CONFIG_PATH.exists():
+    src = CONFIG_PATH if CONFIG_PATH.exists() else DEFAULT_CONFIG_PATH
+    if src.exists():
         try:
-            with open(CONFIG_PATH, "r", encoding="utf-8-sig") as f:
+            with open(src, "r", encoding="utf-8-sig") as f:
                 cfg = deep_merge(cfg, json.load(f))
         except Exception as exc:
             print(f"[警告] 读取 config.json 失败: {exc}")
@@ -399,10 +403,11 @@ class DemoReader(BaseReader):
 # --------------------------------------------------------------------------- #
 
 DETAIL_HEADER = [
-    "时间", "警报状态", "SOC(%)",
+    "时间", "充放电状态", "电流(A)", "SOC(%)", "循环次数",
     "THM0_MOS(℃)", "THM1_插座(℃)", "THM2_电芯(℃)", "温差(℃)",
     "电芯1(V)", "电芯2(V)", "电芯3(V)", "电芯4(V)", "电芯5(V)", "电芯6(V)",
-    "电流(A)", "最高单体(V)", "最低单体(V)", "充放电状态",
+    "最高单体(V)", "最低单体(V)", "压差(mV)",
+    "报警状态", "报警类型",
 ]
 
 
@@ -461,6 +466,38 @@ class WindowCsv:
         minute = (dt.minute // self.minutes) * self.minutes
         return dt.replace(minute=minute, second=0, microsecond=0)
 
+    def _open_window(self) -> None:
+        path = self.path
+        new = not path.exists() or path.stat().st_size == 0
+        if not new:
+            first = ""
+            try:
+                with open(path, "r", encoding="utf-8-sig", newline="") as f:
+                    first = f.readline().rstrip("\r\n")
+            except Exception:
+                first = ""
+            try:
+                old_fields = next(csv.reader([first])) if first else []
+            except Exception:
+                old_fields = []
+            if old_fields != [str(h) for h in self.header]:
+                # 旧版本列格式：改名保留原数据，新文件用新表头
+                n = 1
+                while True:
+                    old = path.with_name(f"{path.stem}_旧格式{n}{path.suffix}")
+                    if not old.exists():
+                        break
+                    n += 1
+                try:
+                    path.rename(old)
+                except Exception:
+                    pass
+                new = True
+        self._fh = open(path, "a", encoding="utf-8-sig", newline="")
+        if new:
+            csv.writer(self._fh).writerow(self.header)
+        self._fh.flush()
+
     def write(self, dt: datetime, row: List[Any]) -> None:
         start = self._window_start(dt)
         if start != self.window or self._fh is None:
@@ -468,11 +505,7 @@ class WindowCsv:
             self.window = start
             self.folder.mkdir(parents=True, exist_ok=True)
             self.path = self.folder / f"{self.prefix}_{start:%Y%m%d_%H%M}.csv"
-            new = not self.path.exists() or self.path.stat().st_size == 0
-            self._fh = open(self.path, "a", encoding="utf-8-sig", newline="")
-            if new:
-                csv.writer(self._fh).writerow(self.header)
-                self._fh.flush()
+            self._open_window()
             self.rows = 0
         csv.writer(self._fh).writerow(row)
         self._fh.flush()
@@ -490,18 +523,23 @@ class WindowCsv:
 def detail_row(d: BmsData, alarm_text: str = "") -> List[Any]:
     cells = list(d.cells) + [""] * (6 - len(d.cells))
     cells = [f"{v / 1000:.3f}" if isinstance(v, (int, float)) else "" for v in cells[:6]]
+    names = (alarm_text or "").strip()
     vmax = f"{max(d.cells) / 1000:.3f}" if d.cells else ""
     vmin = f"{min(d.cells) / 1000:.3f}" if d.cells else ""
+    delta = f"{max(d.cells) - min(d.cells)}" if d.cells else ""
     return [
-        fmt_dt(d.updated), alarm_text or "正常",
+        fmt_dt(d.updated), charge_text(d),
+        f"{d.current_a:.1f}" if d.current_a is not None else "",
         f"{d.soc:.0f}" if d.soc is not None else "",
+        str(d.cycle_count) if d.cycle_count is not None else "",
         f"{d.mos_temp:.1f}" if d.mos_temp is not None else "",
         f"{d.socket_temp:.1f}" if d.socket_temp is not None else "",
         f"{d.cell_temp:.1f}" if d.cell_temp is not None else "",
         f"{d.temp_delta:.1f}" if d.temp_delta is not None else "",
         *cells,
-        f"{d.current_a:.1f}" if d.current_a is not None else "",
-        vmax, vmin, charge_text(d),
+        vmax, vmin, delta,
+        "报警" if names else "正常",
+        names if names else "无",
     ]
 
 
@@ -748,7 +786,7 @@ def run_gui(cfg: Dict[str, Any], start_minimized: bool = False, demo: bool = Fal
 
     out_dir = Path(cfg.get("output_dir") or "记录")
     if not out_dir.is_absolute():
-        out_dir = APP_DIR / out_dir
+        out_dir = DATA_DIR / out_dir
     window_min = int(cfg.get("record_window_min", 30) or 30)
     detail_csv = WindowCsv(out_dir, window_min)
     alarm_csv = DailyCsv(out_dir, "告警记录", ALARM_HEADER)
@@ -1163,10 +1201,11 @@ def run_gui(cfg: Dict[str, Any], start_minimized: bool = False, demo: bool = Fal
         def work() -> None:
             try:
                 m = updater.fetch_manifest(
-                    url, float((cfg.get("update") or {}).get("timeout_s", 15)))
+                    url, float((cfg.get("update") or {}).get("timeout_s", 15)),
+                    str((cfg.get("update") or {}).get("proxy") or ""))
                 upd_q.put(("manifest", m))
             except Exception as exc:
-                upd_q.put(("error", "检查更新失败：%s" % exc))
+                upd_q.put(("error", updater.friendly_error(exc, url)))
 
         threading.Thread(target=work, daemon=True).start()
 
@@ -1192,12 +1231,13 @@ def run_gui(cfg: Dict[str, Any], start_minimized: bool = False, demo: bool = Fal
                         upd_q.put(("progress", (done, total)))
 
                 updater.download_file(
-                    url, dest, float((cfg.get("update") or {}).get("timeout_s", 15)), prog)
+                    url, dest, float((cfg.get("update") or {}).get("timeout_s", 15)), prog,
+                    str((cfg.get("update") or {}).get("proxy") or ""))
                 if sha and updater.sha256_file(dest).lower() != sha.lower():
                     raise ValueError("SHA256 校验不通过")
                 upd_q.put(("downloaded", (dest, version)))
             except Exception as exc:
-                upd_q.put(("error", "下载失败：%s" % exc))
+                upd_q.put(("error", updater.friendly_error(exc, url)))
 
         threading.Thread(target=work, daemon=True).start()
 
@@ -1603,20 +1643,27 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--check-update", type=str, default="",
                         help="只检查更新清单并打印结果（不下载）")
     args = parser.parse_args(argv)
+    cfg = load_config()
 
     if args.check_update:
+        code = 0
         try:
-            m = updater.fetch_manifest(args.check_update, 15)
+            proxy = str((cfg.get("update") or {}).get("proxy") or "")
+            m = updater.fetch_manifest(args.check_update, 15, proxy)
             remote = str(m.get("version") or "")
             print(json.dumps(m, ensure_ascii=False, indent=2))
             print("remote=%s local=%s newer=%s" %
                   (remote, APP_VERSION, updater.is_newer(remote, APP_VERSION)))
-            return 0
         except Exception as exc:
-            print("check failed: %s" % exc)
-            return 1
+            print(updater.friendly_error(exc, args.check_update))
+            code = 1
+        try:
+            if sys.stdin and sys.stdin.isatty():
+                input("\n按回车退出…")
+        except Exception:
+            pass
+        return code
 
-    cfg = load_config()
     if args.port:
         cfg["port"] = args.port
     if args.baud:
